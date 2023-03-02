@@ -1,0 +1,90 @@
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: mypublic-topic
+  description: Description of my public topic
+spec:
+  type: AsyncAPI
+  lifecycle: production
+  owner: SC
+  system: oom
+  definition: |
+    asyncapi: "2.0.0"
+    id: "michelin:test:kafka:confluent"
+    info:
+      title: ASyncAPI Kafka Sample
+      description: Ceci est un test
+      contact: SMI/HIP
+    
+    servers:
+      prod:        
+        url: localhost:9092
+        protocol: kafka
+        security:
+          - saslScramCreds: []
+        bindings:
+          kafka:
+            schemaRegistryUrl: "https://my-schema-registry.com"
+            schemaRegistryVendor: "confluent"
+            schemaRegistryAvailable: true
+    
+    components:
+      securitySchemes:
+        saslScramCreds:
+          type: userPassword
+          description: Info about how/where to get credentials
+          x-mykafka-sasl-mechanism: 'SCRAM-SHA-256'
+    
+    channels:
+      my.topic.name:
+        description: This is my topic description
+        subscribe:
+          operationId: someUniqueId
+          summary: Interesting messages
+          description: You can get really interesting messages from this topic
+          
+          tags:
+          - name: awesome
+          - name: interesting
+          
+          message:
+            description: Description of a single message in the topic
+            schemaFormat: "application/vnd.apache.avro;version=1.9.0"
+            contentType: "application/octet-stream"
+            headers:
+              type: object
+              properties:
+                someHeader: 
+                  type: string
+                  description: This header will contain some useful value
+                aNumericDigit:
+                  type: integer
+                  minimum: 0
+                  maximium: 9
+            payload:
+              type: string
+              pattern: '^Hello, .+$'
+            examples:
+              - mysimpleexample:
+                  summary: This is what a message can look like
+                  headers: |-
+                    {"someHeader": "Howdy", "aNumericDigit": 4}
+                  payload: "Hello, Dale"
+          bindings:
+            kafka:
+              schemaIdLocation: "payload"
+              key:
+                type: string
+                description: explanation of how message keys are being used
+              groupId: 
+                type: string
+                enum:
+                - validone
+                - validtwo
+                pattern: '^[A-Z]{10}[0-5]$'
+              clientId:
+                type: string
+                pattern: '^[a-z]{22}$'
+          
+          payload:
+            $ref: my-avro-schema.avsc
